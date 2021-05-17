@@ -18,7 +18,6 @@ public class DeleteDaoImpl implements DeleteDao {
 	public void deleteLink(Link link) {
 		// TODO Auto-generated method stub
 		String sql1 = "delete from link where l_id=?";
-		String sql2 = "update port set portIp = 0,portStatus=0 where pt_id=?";
 		Connection conn = null;
 		PreparedStatement ps = null;
 		try {
@@ -26,12 +25,6 @@ public class DeleteDaoImpl implements DeleteDao {
 			conn.setAutoCommit(false);
 			ps = conn.prepareStatement(sql1);
 			ps.setInt(1, link.getL_id());
-			ps.execute();
-			ps = conn.prepareStatement(sql2);
-			ps.setInt(1, link.getTxPort_id());
-			ps.execute();
-			ps = conn.prepareStatement(sql2);
-			ps.setInt(1, link.getRxPort_id());
 			ps.execute();
 			conn.commit();
 		} catch (SQLException e) {

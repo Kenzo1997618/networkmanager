@@ -2,6 +2,7 @@ package cn.edu.uestc.platform.pojo;
 
 import java.util.List;
 
+//复杂节点
 public class ComplexNode {
 	private int cn_id;
 	private String complexNodeName;

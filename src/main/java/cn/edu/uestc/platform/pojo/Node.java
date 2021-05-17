@@ -23,6 +23,11 @@ public class Node {
 	private List<Port> ports;
 	private String iconUrl;
 	private int cn_id;
+	//2021.5.2
+	private String serviceStatus;
+	private float computeLoad;
+	private float storageStatus;
+	private String subnetIP;
 
 	public String getIconUrl() {
 		return iconUrl;
@@ -186,4 +191,36 @@ public class Node {
 				+ uuid + ", ports=" + ports + ", iconUrl=" + iconUrl + ", cn_id=" + cn_id + "]";
 	}
 
+
+	public String getServiceStatus() {
+		return serviceStatus;
+	}
+
+	public void setServiceStatus(String serviceStatus) {
+		this.serviceStatus = serviceStatus;
+	}
+
+	public float getComputeLoad() {
+		return computeLoad;
+	}
+
+	public void setComputeLoad(float computeLoad) {
+		this.computeLoad = computeLoad;
+	}
+
+	public float getStorageStatus() {
+		return storageStatus;
+	}
+
+	public void setStorageStatus(float storageStatus) {
+		this.storageStatus = storageStatus;
+	}
+
+	public String getSubnetIP() {
+		return subnetIP;
+	}
+
+	public void setSubnetIP(String subnetIP) {
+		this.subnetIP = subnetIP;
+	}
 }

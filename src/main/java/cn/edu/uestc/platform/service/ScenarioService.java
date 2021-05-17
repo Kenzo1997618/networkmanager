@@ -11,6 +11,9 @@ import cn.edu.uestc.platform.controller.LinkController;
 import cn.edu.uestc.platform.controller.NodeController;
 import cn.edu.uestc.platform.dao.ComplexNodeDao;
 import cn.edu.uestc.platform.dao.ComplexNodeDaoImpl;
+import cn.edu.uestc.platform.dao.DeleteDao;
+import cn.edu.uestc.platform.dao.DeleteDaoImpl;
+import cn.edu.uestc.platform.dao.L2LinkDao;
 import cn.edu.uestc.platform.dao.LinkDao;
 import cn.edu.uestc.platform.dao.LinkDaoImpl;
 import cn.edu.uestc.platform.dao.NodeDao;
@@ -20,6 +23,7 @@ import cn.edu.uestc.platform.dao.PortDaoImpl;
 import cn.edu.uestc.platform.dao.ScenarioDao;
 import cn.edu.uestc.platform.dao.ScenarioDaoImpl;
 import cn.edu.uestc.platform.pojo.ComplexNode;
+import cn.edu.uestc.platform.pojo.L2Link;
 import cn.edu.uestc.platform.pojo.Link;
 import cn.edu.uestc.platform.pojo.Node;
 import cn.edu.uestc.platform.pojo.Port;
@@ -69,6 +73,15 @@ public class ScenarioService {
 			linkController.delLinkMTM(link.getFromNodeName(), link.getFromNodeIP(), link.getToNodeName(),
 					link.getToNodeIP());
 		}
+		//delete all bridge
+		
+		L2LinkDao l2Dao = new L2LinkDao();
+		List<L2Link> l2LinkList = l2Dao.getL2LinkList(s_id);
+		
+		//TODO 
+		//DELETE ALL bridge
+		
+		
 		logger.info("链路删除结束，结束时间:" + new Date() + "'/n'开始删除Openstack上的节点");
 		// 拿到所有的节点
 		NodeDao nodeDao = new NodeDaoImpl();
@@ -90,6 +103,19 @@ public class ScenarioService {
 		// TODO Auto-generated method stub
 		NodeDao nodeDao = new NodeDaoImpl();
 		ComplexNodeDao complexNodeDao = new ComplexNodeDaoImpl();
+		// 拿到所有的链路
+		LinkDao linkDao = new LinkDaoImpl();
+		DeleteDao deleteDao = new DeleteDaoImpl();
+		List<Link> links = linkDao.getLinkList(s_id);
+
+		// 删除Openstack上的所有链路
+		logger.info("开始删除Openstack上的所有链路 ，操作时间:" + new Date());
+		LinkController linkController = new LinkController();
+		for (Link link : links) {
+			linkController.delLinkMTM(link.getFromNodeName(), link.getFromNodeIP(), link.getToNodeName(),
+					link.getToNodeIP());
+			deleteDao.deleteLink(link);
+		}
 		NodeService nodeService = new NodeService();
 		List<Node> nodes = nodeDao.findAllNodeByScenarioId(s_id);
 		System.out.println("开始删除场景了");
@@ -146,11 +172,11 @@ public class ScenarioService {
 		logger.info("恢复场景结束，操作时间:" + new Date());
 	}
 
-	public void addDynamicTopologyFile(String path,int s_id) {
+	public void addDynamicTopologyFile(String path, int s_id) {
 		// TODO Auto-generated method stub
 		ScenarioDao scenarioDao = new ScenarioDaoImpl();
-		scenarioDao.insertDynamicTopologyFile(path,s_id);
-		
+		scenarioDao.insertDynamicTopologyFile(path, s_id);
+
 	}
 
 	public String getDynamicTopologyFile(int s_id) {

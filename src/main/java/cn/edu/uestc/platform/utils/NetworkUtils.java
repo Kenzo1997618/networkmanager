@@ -38,9 +38,11 @@ public class NetworkUtils {
 	public static Subnet createSubnetByIP(String ip) {
 		// 必须使用管理员进行认证
 		OSClientV3 os = OSClientFactory.authenticate("admin", "123456", Constants.ADMIN_PROJECT_ID);
+		//获得openstack项目		f766e0582674439fbd935cedfa404947  项目id
 		Project project = os.identity().projects().get("f766e0582674439fbd935cedfa404947");
+		
 		Network network = os.networking().network().create(Builders.network()
-				.name("link" + ip.substring(0, ip.lastIndexOf(".")) + ".0").tenantId(project.getId()).build());// 网络的名称为link+ip
+				.name("link" + ip.substring(0, ip.lastIndexOf(".")) + ".0").tenantId(project.getId()).build());// 网络的名称为link+ip   xxx.xxx.xxx+.0
 		Subnet subnet = os.networking().subnet()// 无DHCP
 				.create(Builders.subnet().name("link" + ip.substring(0, ip.lastIndexOf(".")) + ".0")
 						.networkId(network.getId()).tenantId(project.getId()).ipVersion(IPVersionType.V4)
@@ -104,7 +106,7 @@ public class NetworkUtils {
 	public static FloatingIP createFloatingIp(OSClientV3 os) {
 		FloatingIP ip = null;
 		synchronized (NetworkUtils.class) {// 对当前类的Class的加锁，由于每个类都是Class的一个实例，所以可以对当前类的Class加锁
-			ip = os.compute().floatingIps().allocateIP("ext_zwn");
+			ip = os.compute().floatingIps().allocateIP("ext_zwn");   //ext_zwn : pool  一个网络池
 		}
 		return ip;
 	}
@@ -122,7 +124,7 @@ public class NetworkUtils {
 		for (Server server : servers) {
 			if (server.getName().equals(name)) {
 				Map<String, List<? extends Address>> all = server.getAddresses().getAddresses();
-				List<? extends Address> floatIps = all.get("network1");// net为浮动ip所绑定的网段，一定要注意最后要修改这块，否则一直出错
+				List<? extends Address> floatIps = all.get("net");// net为浮动ip所绑定的网段，一定要注意最后要修改这块，否则一直出错
 				System.out.println(floatIps);
 				for (Address floatIp : floatIps) {
 					if (floatIp.getType().equals("floating")) {
@@ -133,10 +135,10 @@ public class NetworkUtils {
 		}
 		return null;
 	}
-//	@Test
-//	public void demo1(){
-//		getFloatIpByNodeName("vm3");
-//	}
+	// @Test
+	// public void demo1(){
+	// getFloatIpByNodeName("vm3");
+	// }
 
 	/**
 	 * 给定ip和虚拟机的名称，判断虚拟机是否有这个ip地址
@@ -148,7 +150,8 @@ public class NetworkUtils {
 	 */
 	public static boolean isHaveIP(OSClientV3 os, String name, String ip) {
 		// Server server = os.compute().servers().get("");// 查找到一个名称所对应的虚拟机
-		// 查api 应该含有通过名字 最后得到ServerID的函数 从而去掉一层循环 暂时用ServerUtils中的方法。本质还是三重循环，但去掉了if判断
+		// 查api 应该含有通过名字 最后得到ServerID的函数 从而去掉一层循环
+		// 暂时用ServerUtils中的方法。本质还是三重循环，但去掉了if判断
 		Server server = ServerUtils.getServer(name);
 		Map<String, List<? extends Address>> map = server.getAddresses().getAddresses();
 		Collection<List<? extends Address>> values = map.values();
@@ -180,14 +183,14 @@ public class NetworkUtils {
 		try {
 			System.out.println(
 					"source zph-openrc.sh\nneutron port-create " + getNameByIp(ip) + " --fixed-ip ip_address=" + ip);
-			//相当于给Openstack上的云上添加端口
+			// 相当于给Openstack上的云上添加端口
 			match = ssh.exec("source zph-openrc.sh\nneutron port-create " + getNameByIp(ip) + " --fixed-ip ip_address="
 					+ ip + "\n");
 			// 该命令行输出为固定格式
 			String id = match.substring(match.indexOf(" id                    | ") + 25,
 					match.indexOf(" id                    | ") + 25 + 36);
 			logger.info("成功为虚拟机 " + nodeName + " 分配了id为 " + id + " 的 ip: " + ip);
-			//相当于给Openstack上的实例连接上上面创建的端口(把虚拟机挂在云上)
+			// 相当于给Openstack上的实例连接上上面创建的端口(把虚拟机挂在云上)
 			System.out.println("source zph-openrc.sh\nnova interface-attach --port-id " + id + " " + nodeName);
 			ssh.exec("source zph-openrc.sh\nnova interface-attach --port-id " + id + " " + nodeName + "\n");
 		} catch (Exception e) {
@@ -328,6 +331,10 @@ public class NetworkUtils {
 	 *            虚拟机的名称
 	 * @param ip
 	 *            要删除的端口ip
+	 *            
+	 *            
+	 *            ssh.exec(cmd) cmd：linux命令行操作指令
+	 *            
 	 */
 	public static void delIPToNode(String nodeName, String ip) {
 		SSHExecutorUtils ssh = new SSHExecutorUtils(Constants.CONTROLLER_NODE_NAME, "123456",
@@ -343,5 +350,22 @@ public class NetworkUtils {
 			e.printStackTrace();
 		}
 		ssh.close();
+	}
+
+	/*
+	 * get instance last interfaceName
+	 */
+	public static String getInterfaceName(String nodeName) {
+		SSHExecutorUtils sshExecutor = new SSHExecutorUtils("root", "123456",
+				NetworkUtils.getFloatIpByNodeName(nodeName));
+		try {
+			String out = sshExecutor.exec("ifconfig");
+			int count = out.lastIndexOf("eth");
+			return out.substring(count, count + 5).trim();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

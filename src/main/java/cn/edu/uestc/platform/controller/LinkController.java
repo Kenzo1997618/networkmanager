@@ -23,6 +23,7 @@ import cn.edu.uestc.platform.winter.openstack.ServerUtils;
 @Controller
 @RequestMapping("/link")
 public class LinkController {
+	//日志
 	private static Logger logger = Logger.getLogger(LinkController.class);
 
 	/**
@@ -39,19 +40,22 @@ public class LinkController {
 	 */
 	@ResponseBody
 	@RequestMapping(value = "/addMTM", method = RequestMethod.POST)
+	//ResponseEntity标识整个http相应：状态码、头部信息、响应体内容(spring)
 	public ResponseEntity<Link> createLinkMTM(String fromNode, String fromNodeIP, String toNode, String toNodeIP) {
 		logger.info("进入链路创建部分(多对多)  fromNode " + fromNode + " fromNodeIP " + fromNodeIP + " toNode " + toNode
 				+ " toNodeIP " + toNodeIP);
+		
+		//authenticate：师兄编写的工厂类，功能：完成openstack的keystone认证
 		OSClientV3 os = OSClientFactory.authenticate("zph", "123456", Constants.ZPH_PROJECT_ID);
 		// 1.拿到fromNode的节点信息，看他是否存在与fromNodeIP相同的网段
-		if (NetworkUtils.isHaveIP(os, fromNode, fromNodeIP)) { 
+		if (NetworkUtils.isHaveIP(os, fromNode, fromNodeIP)) {
 			// 2.如果存在，则不生成子网，直接将toNodeIP添加到toNode上
-			if(ServerUtils.getServer(toNode).getAvailabilityZone().equals("vm")){//vm
+			if (ServerUtils.getServer(toNode).getAvailabilityZone().equals("vm")
+					|| ServerUtils.getServer(toNode).getAvailabilityZone().equals("amd")) {// vm
 				DynamicFactory.addPort(os, toNode, toNodeIP);
-			}else{//docker
+			} else {// docker
 				PortUtils.addPort(os, toNode, toNodeIP);
 			}
-			
 		} else {
 			// 3.如果不存在，则生成子网，再将fromNodeIP和toNodeIP添加到fromNode和toNode上边
 			// 1.拿到fromNode的ip，截取网络号，生成子网
@@ -62,60 +66,61 @@ public class LinkController {
 			exec.execute(new PortThread(toNode, toNodeIP));
 			exec.execute(new PortThread(fromNode, fromNodeIP));
 			exec.shutdown();
-			while (true) {  
-	            if (exec.isTerminated()) {  
-	                System.out.println("链路生成结束了！");  
-	                break;  
-	            }  
-	            try {
+			while (true) {
+				if (exec.isTerminated()) {
+					System.out.println("链路生成结束了！");
+					break;
+				}
+				try {
 					Thread.sleep(200);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
-				}  
-	        }  
-//			if(ServerUtils.getServer(toNode).getAvailabilityZone().equals("vm")){//vm
-//				DynamicFactory.addPort(os, toNode, toNodeIP);
-//			}else{//docker
-//				PortUtils.addPort(os, toNode, toNodeIP);
-//			}		
-//			
-//			if(ServerUtils.getServer(fromNode).getAvailabilityZone().equals("vm")){//vm
-//				DynamicFactory.addPort(os, fromNode, fromNodeIP);
-//			}else{//docker
-//				PortUtils.addPort(os, fromNode, fromNodeIP);
-//			}
+				}
+			}
+			// if(ServerUtils.getServer(toNode).getAvailabilityZone().equals("vm")){//vm
+			// DynamicFactory.addPort(os, toNode, toNodeIP);
+			// }else{//docker
+			// PortUtils.addPort(os, toNode, toNodeIP);
+			// }
+			//
+			// if(ServerUtils.getServer(fromNode).getAvailabilityZone().equals("vm")){//vm
+			// DynamicFactory.addPort(os, fromNode, fromNodeIP);
+			// }else{//docker
+			// PortUtils.addPort(os, fromNode, fromNodeIP);
+			// }
 		}
-		//返回的对象
+		// 返回的对象
 		Link link = new Link();
 		link.setFromNode(fromNode);
 		link.setEndNode(toNode);
 		link.setStatus("1");
 		return ResponseEntity.ok(link);
 	}
+
 	/**
 	 * 删除一条链路
 	 */
 	@ResponseBody
 	@RequestMapping(value = "/delMTM", method = RequestMethod.POST)
 	public ResponseEntity<Link> delLinkMTM(String fromNode, String fromNodeIP, String toNode, String toNodeIP) {
-		logger.info("fromNode " + fromNode + " fromNodeIP " + fromNodeIP + " toNode " + toNode
-				+ " toNodeIP " + toNodeIP);
+		logger.info(
+				"fromNode " + fromNode + " fromNodeIP " + fromNodeIP + " toNode " + toNode + " toNodeIP " + toNodeIP);
 		OSClientV3 os = OSClientFactory.authenticate("zph", "123456", Constants.ZPH_PROJECT_ID);
-		//目前只支持1对1删除链路
-		if(ServerUtils.getServer(fromNode).getAvailabilityZone().equals("vm")){//vm
+		// 目前只支持1对1删除链路
+		if (ServerUtils.getServer(fromNode).getAvailabilityZone().equals("vm")) {// vm
 			DynamicFactory.delPort(os, fromNode, fromNodeIP);
-		}else{//docker
+		} else {// docker
 			PortUtils.delPort(os, fromNode, fromNodeIP);
 		}
-		
-		if(ServerUtils.getServer(toNode).getAvailabilityZone().equals("vm")){//vm
+
+		if (ServerUtils.getServer(toNode).getAvailabilityZone().equals("vm")) {// vm
 			DynamicFactory.delPort(os, toNode, toNodeIP);
-		}else{//docker
+		} else {// docker
 			PortUtils.delPort(os, toNode, toNodeIP);
 		}
-		//删除网段
+		// 删除网段
 		DynamicNetWorkUtils.delNetworkByIP(fromNodeIP);
-		
+
 		Link link = new Link();
 		link.setFromNode(fromNode);
 		link.setEndNode(toNode);

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +16,188 @@ import cn.edu.uestc.platform.pojo.Node;
 import cn.edu.uestc.platform.utils.DBUtiles;
 
 public class NodeDaoImpl implements NodeDao {
+
+	/*
+	 * 插入节点 2021.5.3
+	 */
+	@Override
+	public void insertL3Node(Node node) {
+		// TODO Auto-generated method stub
+		String sql = "insert into L3Node(nodeName,manageIp,nodeType,hwArch,"
+				+ "numberPort,nodeStatus,x,y,iconUrl,serviceStatus,computeLoad,storageStatus) "
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?)";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			ps.setString(1, node.getNodeName());
+			ps.setString(2, node.getManageIp());
+			ps.setInt(3, node.getNodeType());
+			ps.setInt(4, node.getHardwareArchitecture());
+			ps.setInt(5, node.getNumberPort());
+			ps.setInt(6, node.getNodeStatus());
+			ps.setFloat(7, node.getX());
+			ps.setFloat(8, node.getY());
+			ps.setString(9, node.getIconUrl());
+			ps.setString(10,node.getServiceStatus());
+			ps.setFloat(11,node.getComputeLoad());
+			ps.setFloat(12,node.getStorageStatus());
+			ps.execute();
+			rs = ps.getGeneratedKeys();
+			if(rs.next()){
+				node.setN_id(rs.getInt(1));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(ps, conn);
+		}
+	}
+	@Override
+	public void insertL2Node(Node node) {
+		// TODO Auto-generated method stub
+		String sql = "insert into L2Node(nodeName,nodeType,subnetIP,"
+				+ "numberPort,nodeStatus,x,y,iconUrl) "
+				+ "values(?,?,?,?,?,?,?,?)";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			ps.setString(1, node.getNodeName());
+			ps.setInt(2, node.getNodeType());
+			ps.setString(3, node.getSubnetIP());
+			ps.setInt(4, node.getNumberPort());
+			ps.setInt(5, node.getNodeStatus());
+			ps.setFloat(6, node.getX());
+			ps.setFloat(7, node.getY());
+			ps.setString(8, node.getIconUrl());
+			ps.execute();
+			rs = ps.getGeneratedKeys();
+			if(rs.next()){
+				node.setN_id(rs.getInt(1));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(ps, conn);
+		}
+	}
+	/*
+	 * update节点状态
+	 */
+	public boolean updateNodeStatus(int nodeStatus, String manageIP) {
+		String sql = "update node set nodeStatus=? where manageIP=?";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		boolean flag = false;
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			ps.setInt(1,nodeStatus);
+			ps.setString(2,manageIP);
+			flag = ps.execute();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(ps, conn);
+		}
+		return flag;
+	}
+	/*
+	 *  根据manageIP查询接节点状态
+	 */
+	public int getNodeStatusByManageIP(String manageIP){
+		String sql = "select nodeStatus from L3Node where manageIP=?";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int nodeStatus = 0;
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			ps.setString(1,manageIP);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				nodeStatus = rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(rs, ps, conn);
+		}
+		return nodeStatus;
+	}
+
+	public List<Node> getRouter(){
+		String sql = "select nodeID,nodeName,nodeType from L3Node where nodeType like '_1'";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<Node> nodes = new ArrayList<>();
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				Node node = new Node();
+				node.setN_id(rs.getInt(1));
+				node.setNodeName(rs.getString(2));
+				node.setNodeType(rs.getInt(4));
+				nodes.add(node);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(rs, ps, conn);
+		}
+		return nodes;
+	}
+
+	public List<Node> getSwitch(){
+		String sql = "select nodeID,nodeName,nodeType from L2Node";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<Node> nodes = new ArrayList<>();
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				Node node = new Node();
+				node.setN_id(rs.getInt(1));
+				node.setNodeName(rs.getString(2));
+				node.setNodeType(rs.getInt(3));
+				nodes.add(node);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(rs, ps, conn);
+		}
+		return nodes;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/*
 	 * 判断节点存在否,当前场景下的节点名不能重复
@@ -51,6 +234,7 @@ public class NodeDaoImpl implements NodeDao {
 				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 		Connection conn = null;
 		PreparedStatement ps = null;
+		ResultSet rs = null;
 		try {
 			conn = DBUtiles.getConnection();
 			ps = conn.prepareStatement(sql);
@@ -72,6 +256,10 @@ public class NodeDaoImpl implements NodeDao {
 			ps.setString(16, node.getIconUrl());
 			ps.setInt(17, node.getCn_id());
 			ps.execute();
+			rs = ps.getGeneratedKeys();
+			if(rs.next()){
+				node.setN_id(rs.getInt(1));
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -515,7 +703,6 @@ public class NodeDaoImpl implements NodeDao {
 		Connection conn = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
-
 		try {
 			conn = DBUtiles.getConnection();
 			ps = conn.prepareStatement(sql);
@@ -531,6 +718,37 @@ public class NodeDaoImpl implements NodeDao {
 			DBUtiles.releaseResource(rs, ps, conn);
 		}
 		return manageIps;
+	}
+
+	public List<String> getAllNodeIp() {
+		// TODO Auto-generated method stub
+		String sql = "select manageIp from node";
+
+		// 用于存放左右IP
+		List<String> manageIps = new LinkedList<>();
+		Connection conn = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+		try {
+			conn = DBUtiles.getConnection();
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(sql);
+			while (rs.next()) {
+				manageIps.add(rs.getString(1));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(rs, stmt, conn);
+		}
+		return manageIps;
+	}
+
+	@Test
+	public void demo1111() {
+
+		System.out.println(getAllNodeIp());
 	}
 
 	@Override
@@ -553,6 +771,70 @@ public class NodeDaoImpl implements NodeDao {
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public Node getNodeByNodeName(String nodeName) {
+		// TODO Auto-generated method stub
+		String sql = "select *from node where nodeName = ?";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		Node node = new Node();
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			ps.setString(1, nodeName);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				node.setN_id(rs.getInt(1));
+				node.setNodeName(rs.getString(2));
+				node.setManageIp(rs.getString(3));
+				node.setNodeType(rs.getInt(4));
+				node.setHardwareArchitecture(rs.getInt(5));
+				node.setOperatingSystem(rs.getInt(6));
+				node.setNumberPort(rs.getInt(7));
+				node.setNumberInternalModule(rs.getInt(8));
+				node.setNumberInternalLink(rs.getInt(9));
+				node.setImageName(rs.getString(10));
+				node.setNodeStatus(rs.getInt(11));
+				node.setS_id(rs.getInt(12));
+				node.setX(rs.getFloat(13));
+				node.setY(rs.getFloat(14));
+				node.setFlavorType(rs.getString(15));
+				node.setUuid(rs.getString(16));
+				node.setIconUrl(rs.getString(17));
+				node.setCn_id(rs.getInt(18));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DBUtiles.releaseResource(rs, ps, conn);
+		}
+		return node;
+	}
+
+	@Override
+	public void updateLocation(int s_id, String nodeName, int x, int y) {
+		// TODO Auto-generated method stub
+		String sql = "update node set X=?,Y=? where nodeName=? and scenario_id=?";
+		Connection conn = null;
+		PreparedStatement ps = null;
+		try {
+			conn = DBUtiles.getConnection();
+			ps = conn.prepareStatement(sql);
+			ps.setInt(1, x);
+			ps.setInt(2, y);
+			ps.setString(3, nodeName);
+			ps.setInt(4, s_id);
+			ps.execute();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}finally{
+			DBUtiles.releaseResource(ps, conn);
 		}
 	}
 }

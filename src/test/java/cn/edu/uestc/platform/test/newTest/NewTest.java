@@ -1,42 +1,42 @@
-//package cn.edu.uestc.platform.test.newTest;
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//import java.util.Set;
-//import java.util.TreeSet;
-//import java.util.concurrent.TimeUnit;
-//
-//import org.openstack4j.api.Builders;
-//import org.openstack4j.api.OSClient.OSClientV3;
-//import org.openstack4j.model.common.Identifier;
-//import org.openstack4j.model.network.IP;
-//import org.openstack4j.model.network.Port;
-//import org.openstack4j.model.network.State;
-//import org.openstack4j.model.network.Subnet;
-//import org.openstack4j.openstack.OSFactory;
-//
-//import cn.edu.uestc.platform.dynamicChange.DynamicFactory;
-//import cn.edu.uestc.platform.dynamicChange.Filters;
-//import cn.edu.uestc.platform.dynamicChange.NewLink;
-//import cn.edu.uestc.platform.factory.OSClientFactory;
-//import cn.edu.uestc.platform.factory.ServerFactory;
-//import cn.edu.uestc.platform.utils.Constants;
-//
-//public class NewTest {
-//	
-//	public static void main(String[] args) {
-//		
-//		OSClientV3 os = OSClientFactory.authenticate("zph", "123456", Constants.ZPH_PROJECT_ID);
-//		List<? extends Port> ports = os.networking().port().list();
-//		for(Port port :ports){
-//			 Set<? extends IP> ips = port.getFixedIps();
-//			 for(IP ip:ips){
-//				 if(!ip.getIpAddress().contains("192.168")){
-//					 os.networking().port().delete(port.getId());
-//					 break;
-//				 }
-//			 }
-//		}
+package cn.edu.uestc.platform.test.newTest;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+
+import org.openstack4j.api.Builders;
+import org.openstack4j.api.OSClient.OSClientV3;
+import org.openstack4j.model.common.Identifier;
+import org.openstack4j.model.network.IP;
+import org.openstack4j.model.network.Port;
+import org.openstack4j.model.network.State;
+import org.openstack4j.model.network.Subnet;
+import org.openstack4j.openstack.OSFactory;
+
+import cn.edu.uestc.platform.dynamicChange.DynamicFactory;
+import cn.edu.uestc.platform.dynamicChange.Filters;
+import cn.edu.uestc.platform.dynamicChange.NewLink;
+import cn.edu.uestc.platform.factory.OSClientFactory;
+import cn.edu.uestc.platform.factory.ServerFactory;
+import cn.edu.uestc.platform.utils.Constants;
+
+public class NewTest {
+	
+	public static void main(String[] args) {
+		
+		OSClientV3 os = OSClientFactory.authenticate("zph", "123456", Constants.ZPH_PROJECT_ID);
+		List<? extends Port> ports = os.networking().port().list();
+		for(Port port :ports){
+			 Set<? extends IP> ips = port.getFixedIps();
+			 for(IP ip:ips){
+				 if(!ip.getIpAddress().contains("192.168")){
+					 os.networking().port().delete(port.getId());
+					 break;
+				 }
+			 }
+		}
 //		
 ////		System.out.println(os.compute().images().list());
 //		
@@ -67,5 +67,5 @@
 ////
 ////		}
 ////		DynamicFactory.addPort(OSClientFactory.authenticate("zph", "123456", Constants.ZPH_PROJECT_ID), "vm1", "10.10.12.3");
-//	}
-//}
+	}
+}

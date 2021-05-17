@@ -48,6 +48,8 @@
 	<mvc:resources mapping="/dockerConsole.html" location="/dockerConsole.html" />
 	<mvc:resources mapping="/UpLoadCSV.html" location="/UpLoadCSV.html" />
 	<mvc:resources mapping="/dynamicSetting.html" location="/dynamicSetting.html" />
+	<mvc:resources mapping="/login.html" location="/login.html" />
+	<mvc:resources mapping="portEdit.html" location="/portEdit.html" />
 
 
 

@@ -1,6 +1,8 @@
 package cn.edu.uestc.platform.pojo;
 
-public class LinkForFilter {
+import java.io.Serializable;
+
+public class LinkForFilter implements Serializable{
 
 	protected String fromNodeName;
 	protected String toNodeName;

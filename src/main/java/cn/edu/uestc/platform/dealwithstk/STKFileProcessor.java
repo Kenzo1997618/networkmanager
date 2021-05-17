@@ -17,8 +17,10 @@ public class STKFileProcessor {
 
 	// 根据传来的文件名路径，在当前路径下生成新的文件
 	public String STKFileCreater(String path) throws IOException {
-		File file = new File(path.substring(0, path.indexOf("/") + 1) + "Changed"
-				+ path.substring(path.indexOf("/") + 1, path.length()));
+		String filepath = path.substring(0,path.lastIndexOf("/")+1)+"Changed"+path.substring(path.lastIndexOf("/")+1,path.length());
+		File file = new File(filepath);
+		file.setWritable(true);
+		file.setReadable(true);
 		file.createNewFile();
 		FileOutputStream fileOutputStream = new FileOutputStream(file);
 
@@ -29,9 +31,10 @@ public class STKFileProcessor {
 		fileOutputStream.write("\r\n".getBytes());
 		fileOutputStream.close();
 		// 返回生成的文件名
-		return path.substring(0, path.indexOf("/") + 1) + "Changed"
-				+ path.substring(path.indexOf("/") + 1, path.length());
+		return filepath;
 	}
+	
+
 
 	/*
 	 * 给生成的新文件写入过滤后的文件context
@@ -71,19 +74,6 @@ public class STKFileProcessor {
 			}
 		}
 		fileOutputStream.close();
-	}
-
-	@Test
-	public void demo1() throws IOException {
-		Reader in = new FileReader("E:/interval5min.csv");
-		Iterable<CSVRecord> records = CSVFormat.EXCEL.withFirstRecordAsHeader().parse(in);
-		int count = 0;
-		for (CSVRecord record : records) {
-			if(record.get("Time (EpMin)").equals("0")){
-				System.out.println(record.get("Time (EpMin)")+"----"+record.get("Strand Name"));
-			}
-		}
-		System.out.println("过滤后的文件行数为: " + count);
 	}
 
 }

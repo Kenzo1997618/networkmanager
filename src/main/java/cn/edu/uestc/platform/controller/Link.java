@@ -33,5 +33,7 @@ public class Link {
 	public String toString() {
 		return "Link [fromNode=" + fromNode + ", endNode=" + endNode + ", status=" + status + "]";
 	}
+	
+	
 
 }

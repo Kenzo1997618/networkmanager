@@ -21,9 +21,21 @@ public class OSClientFactory {
 	 */
 	public static OSClientV3 authenticate(String username, String password, String projectId) {
 		OSClientV3 os = OSFactory.builderV3()
+				
+				//认证服务端点？
                 .endpoint("http://10.0.0.11:5000/v3")
-                .credentials("zph", "123456", Identifier.byName("default"))
-                .scopeToProject(Identifier.byId("7e0ba2f4b7e74f0eb21fec7642d42544"))
+  //              .credentials("zph", "123456", Identifier.byName("default"))
+                
+                //Identifier.byName返回传入的name
+                //credentials：身份认证  id，password，field
+                .credentials("admin", "123456", Identifier.byName("default"))
+                
+                
+                //项目id认证
+                .scopeToProject(Identifier.byId(Constants.ZPH_PROJECT_ID))
+                
+                
+                //认证
                 .authenticate();
 		return os;
 	}

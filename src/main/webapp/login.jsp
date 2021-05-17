@@ -9,13 +9,13 @@ pageEncoding="utf-8"%>
     <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.css"/>
     <link rel="stylesheet" href="css/login.css">
 </head>
-<body>
+<body background="img/background.jpg">
 <!--头部区域-->
 <header>
     <nav class="navbar navbar-default" role="navigation">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" href="javascript:;">网络仿真测试平台</a>
+                <a class="navbar-brand" href="javascript:;">天地一体化网络仿真测试平台</a>
             </div>
             <div>
                 <ul class="nav navbar-nav navbar-right">
@@ -29,7 +29,7 @@ pageEncoding="utf-8"%>
     <div class="mycenter">
         <div class="mysign">
             <div class="col-lg-11 text-center text-info">
-                <h2>欢迎登录</h2>
+                <h2 style="color : black">欢迎登录</h2>
             </div>
             <div class="col-lg-10">
                 <input type="text" class="form-control" name="username" placeholder="请输入账户名" required autofocus/>
@@ -59,4 +59,11 @@ document.getElementById("login").onclick=function () {
 <script type="text/javascript" src="lib/jquery/jquery.js"></script>
 <script type="text/javascript" src="lib/bootstrap/js/bootstrap.js"></script>
 </body>
+<footer>
+    <div class="container">
+        <div class="row">
+            <p align="center">Copyright &copy; 中电科54所 & 电子科技大学</p>
+        </div>
+    </div>
+</footer><!--页脚结束-->
 </html>

@@ -3,6 +3,8 @@ package cn.edu.uestc.platform.utils;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Test;
+
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
@@ -11,12 +13,15 @@ import com.jcraft.jsch.UserInfo;
 
 public class SSHExecutor {
 	
-	private static int SESSION_TIMEOUT = 15000;// 原本是30000，等待时间过长，减少点吧
+	private static int SESSION_TIMEOUT = 30000;// 原本是30000，等待时间过长，减少点吧
 	private JSch jsch = null;
 	private Session session = null;
 
 	public SSHExecutor(String username, String password, String host) throws JSchException {
 		jsch = new JSch();
+		
+		//zk new add
+//		jsch.addIdentity(".id_rsa");
 		session = jsch.getSession(username, host, 22);
 		session.setPassword(password);
 		session.setUserInfo(new MyUserInfo());
@@ -87,5 +92,16 @@ public class SSHExecutor {
 
 		public void showMessage(String s) {
 		}
+	}
+	
+	
+	@Test
+	public void demo() throws Exception{
+	
+	}
+	
+	public static void main(String[] args) throws Exception {
+//		SSHExecutor ssh = new SSHExecutor("compute3","123456","10.0.0.41");
+//		System.out.println(ssh.exec("ls"));
 	}
 }

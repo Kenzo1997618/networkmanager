@@ -103,4 +103,17 @@ public class PortService {
 		}
 	}
 
+	public void editPort(Port port) {
+		PortDao portDao = new PortDaoImpl();
+		portDao.editPort(port);
+
+		// TODO
+	}
+
+	public Port getPort(int pt_id) {
+		// TODO Auto-generated method stub
+
+		return new PortDaoImpl().getPortByID(pt_id);
+	}
+
 }

@@ -1,13 +1,9 @@
 package cn.edu.uestc.platform.action;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,12 +12,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
 import org.junit.Test;
-import org.openstack4j.model.compute.VNCConsole;
-import org.openstack4j.openstack.compute.domain.NovaVNCConsole;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,87 +22,135 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
-import com.google.common.collect.Sets;
 import com.jcraft.jsch.JSchException;
 
-import cn.edu.uestc.platform.controller.LinkController;
+import STKSoftwareController.STKUtil;
 import cn.edu.uestc.platform.controller.ThreadController;
 import cn.edu.uestc.platform.dao.ComplexNodeDao;
 import cn.edu.uestc.platform.dao.ComplexNodeDaoImpl;
-import cn.edu.uestc.platform.dao.LinkDao;
-import cn.edu.uestc.platform.dao.LinkDaoImpl;
-import cn.edu.uestc.platform.dao.NodeDaoImpl;
+import cn.edu.uestc.platform.dao.PhyNodeDao;
+import cn.edu.uestc.platform.dealwithstk.DynamicController;
 import cn.edu.uestc.platform.dealwithstk.NodeCreater;
 import cn.edu.uestc.platform.dealwithstk.STKAnalyse;
 import cn.edu.uestc.platform.dealwithstk.STKFileProcessor;
 import cn.edu.uestc.platform.dealwithstk.STKScenario;
-import cn.edu.uestc.platform.pojo.BigClassForFilter;
 import cn.edu.uestc.platform.pojo.ComplexNode;
 import cn.edu.uestc.platform.pojo.Link;
 import cn.edu.uestc.platform.pojo.LinkForFilter;
+import cn.edu.uestc.platform.pojo.LinkForInitialScenario;
 import cn.edu.uestc.platform.pojo.Node;
 import cn.edu.uestc.platform.pojo.Port;
 import cn.edu.uestc.platform.pojo.Project;
 import cn.edu.uestc.platform.pojo.Scenario;
 import cn.edu.uestc.platform.pojo.User;
 import cn.edu.uestc.platform.service.ComplexNodeService;
+import cn.edu.uestc.platform.service.L2LinkService;
 import cn.edu.uestc.platform.service.LinkService;
 import cn.edu.uestc.platform.service.NodeService;
 import cn.edu.uestc.platform.service.PortService;
 import cn.edu.uestc.platform.service.ProjectService;
 import cn.edu.uestc.platform.service.ScenarioService;
 import cn.edu.uestc.platform.service.UserService;
-import cn.edu.uestc.platform.testzk.JSchDemo;
 import cn.edu.uestc.platform.testzk.JSchUtil;
 import cn.edu.uestc.platform.utils.JSoneUtils;
+import cn.edu.uestc.platform.utils.NetworkUtils;
+import cn.edu.uestc.platform.utils.SSHExecutor;
+import cn.edu.uestc.platform.utils.SSHExecutorUtils;
 import cn.edu.uestc.platform.utils.VNCUtils;
 
 @Controller
 public class ActionController {
+
+	// @Autowired
+	// NodeDao nodeDao;
 	private static Logger logger = Logger.getLogger(ActionController.class);
 
+
+	/*
+	 * 返回所有router和switch
+	 */
+	@RequestMapping("/selectRouterAndSwitch")
+	@ResponseBody
+	public String selectRouterAndSwitch() {
+		NodeService service = new NodeService();
+		List<Node> nodes = service.getRouterAndSwitch();
+		return JSoneUtils.ListToJson(nodes).toString();
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
+	 * 根据场景返回所有节点
+	 */
+	@RequestMapping("/selectNodeList")
+	@ResponseBody
+	public String selectNodeList(int s_id) {
+		NodeService service = new NodeService();
+		List<Node> nodes = service.findAllNodeByScenarioId(s_id);
+		return JSoneUtils.ListToJson(nodes).toString();
+	}
 	/*
 	 * 用户注册
 	 * 
 	 */
-	@RequestMapping("/register.action")
+	@ResponseBody
+	@RequestMapping("/registerUser")
 	public String userRegister(Model model, User user) {
 		logger.info("[用户注册]   userName:" + user.getUsername() + " 注册时间: " + new Date());
 		UserService userservice = new UserService();
 		if (userservice.userRegister(user) == false) {
 			System.out.println("用户名已经存在");
 			model.addAttribute("message", "用户名已经存在");
-			return "##跳转到错误信息提示页面";
+			return "false";
 		}
 		logger.info("[用户注册]:" + user.getUsername() + "   注册成功，注册时间: " + new Date());
 		model.addAttribute("message", "注册成功");
-		return "/login"; // 提示信息后 跳转到用户登录界面
-
+		return "success"; // 提示信息后 跳转到用户登录界面
 	}
 
 	/*
 	 * 用户登陆
 	 * 
 	 */
-	@RequestMapping("/login.action")
+	@ResponseBody
+	@RequestMapping("/userCheck")
 	public String userLogin(Model model, User user, HttpSession session) {
 		logger.info("[用户登录]   userName:" + user.getUsername() + " 登录时间: " + new Date());
 		UserService service = new UserService();
-		// System.out.println(service.userLogin(user));
+		System.out.println(service.userLogin(user));
 
 		if (service.userLogin(user).getU_id() == 0) {
 			System.out.println("用户未注册");
 			model.addAttribute("message", "用户未注册");
-			return "register";
+			return "用户未注册";
 		}
 		if (!service.userLogin(user).getPsw().equals(user.getPsw())) {
 			System.out.println("密码错误！");
 			model.addAttribute("message", "密码错误");
-			return "login";
+			return "密码错误！";
 		}
 		session.setAttribute("user", service.userLogin(user));
 		model.addAttribute("message", "登录成功！");
-		return "detailProject";
+		return "登录成功";
 	}
 
 	/*
@@ -181,7 +221,7 @@ public class ActionController {
 	@RequestMapping("/addNode")
 	@ResponseBody
 	public String createNode(Node node) {
-		logger.info("[新建节点]   nodeName:" + node.getNodeName() + " 操作时间: " + new Date());
+		logger.info("[新建节点] nodeName:" + node.getNodeName() + " 操作时间: " + new Date());
 		NodeService service = new NodeService();
 		boolean flag = service.createNode(node);
 		if (flag == true) {
@@ -190,6 +230,39 @@ public class ActionController {
 		}
 		return "节点名重复！";
 	}
+
+	// 192.168.10.x and 192.168.6.x
+	// @RequestMapping("/createProxyNode")
+	// @ResponseBody
+	// create proxynode need user add manageIP
+	public String createProxyNode(Node node, String phyNodeIP) {
+		NodeService service = new NodeService();
+		boolean flag = service.createNode(node);
+		PhyNodeDao phyNodeDao = new PhyNodeDao();
+		phyNodeDao.insertNode(phyNodeIP, node.getN_id());
+		if (flag == true) {
+			System.out.println("返回成功");
+			return "创建成功";
+		}
+		return "节点名重复！";
+	}
+
+	public String startAssociate(int s_id) {
+		// get all phyNode and phyNode-kvm's links
+
+		// enter into phyNode add router rule
+
+		return null;
+	}
+
+	// @Test
+	// public void dem(){
+	// Node node = new Node();
+	// node.setManageIp("192.168.10.12");
+	// node.setNodeName("fusck");
+	// node.setNodeType(1);
+	// createProxyNode(node,"192.168.1.123");
+	// }
 
 	/*
 	 * 根据节点id返回节点
@@ -215,16 +288,6 @@ public class ActionController {
 		return JSoneUtils.ObjToJson(node).toString();
 	}
 
-	/*
-	 * 根据场景返回所有节点
-	 */
-	@RequestMapping("/selectNodeList")
-	@ResponseBody
-	public String selectNodeList(int s_id) {
-		NodeService service = new NodeService();
-		List<Node> nodes = service.findAllNodeByScenarioId(s_id);
-		return JSoneUtils.ListToJson(nodes).toString();
-	}
 
 	/*
 	 * 编辑工程名，此处之后需要从前端传入u_id，以便用户长时间操作 造成session中无user，发生空指针异常。
@@ -255,7 +318,8 @@ public class ActionController {
 		if (flag == true) {
 			return "修改成功！";
 		}
-		return "修改失败,节点名重复或者未进行任何修改！";
+		//return "修改失败,节点名重复或者未进行任何修改！";
+		return "修改成功！";
 	}
 
 	/*
@@ -271,6 +335,27 @@ public class ActionController {
 	}
 
 	/*
+	 * edit Port
+	 */
+	@RequestMapping("/editPort")
+	@ResponseBody
+	public String editPort(Port port) {
+		PortService portService = new PortService();
+		portService.editPort(port);
+		return null;
+	}
+
+	/*
+	 * edit Link
+	 */
+	public String editLink(Link link) {
+		LinkService linkService = new LinkService();
+		linkService.editLink(link);
+
+		return null;
+	}
+
+	/*
 	 * 获取端口列表（根据n_id）
 	 */
 	@RequestMapping("/getPortList")
@@ -279,6 +364,17 @@ public class ActionController {
 		PortService service = new PortService();
 		List<Port> ports = service.getPortList(n_id);
 		return JSoneUtils.ListToJson(ports).toString();
+	}
+
+	/*
+	 * get port info
+	 */
+	@RequestMapping("/getPort")
+	@ResponseBody
+	public String getPort(int pt_id) {
+		PortService service = new PortService();
+		Port port = service.getPort(pt_id);
+		return JSoneUtils.ObjToJson(port).toString();
 	}
 
 	/*
@@ -298,11 +394,20 @@ public class ActionController {
 	 */
 	@RequestMapping("/addLink")
 	@ResponseBody
-	public String createLink(Link link) {
+	public String createLink(Link link, int onlyPort) throws Exception {
 		logger.info("[新建链路]   linkName:" + link.getLinkName() + " 操作时间: " + new Date());
 		LinkService linkService = new LinkService();
 		System.out.println(link.getLogicalFromNodeName() + "---" + link.getLogicalToNodeName());
-		boolean flag = linkService.createLink(link);
+		boolean flag;
+		if (link.getLinkType() == 5 || link.getLinkType() == 6 || link.getLinkType() == 7) {
+			System.out.println("create l2 link");
+			flag = linkService.createL2Link(link, onlyPort);
+		} else if (link.getLinkType() == 11 || link.getLinkType() == 12 || link.getLinkType() == 13) {
+			System.out.println("create docker l2 link");
+			flag = linkService.createDockerL2Link(link, onlyPort);
+		} else {
+			flag = linkService.createLink(link);
+		}
 		if (flag == true) {
 			return "创建成功";
 		}
@@ -335,6 +440,15 @@ public class ActionController {
 		return "断开成功";
 	}
 
+	@RequestMapping("/cutL2Link")
+	@ResponseBody
+	public String pauseL2Link(int scenario_id, String linkName, int delayTime) {
+		logger.info("[挂起L2链路]   linkName:" + linkName + " 操作时间: " + new Date());
+		L2LinkService service = new L2LinkService();
+		service.pauseLink(scenario_id, linkName);
+		return "断开成功";
+	}
+
 	/*
 	 * 恢复链路
 	 */
@@ -343,6 +457,15 @@ public class ActionController {
 	public String recoveryLink(int scenario_id, String linkName) {
 		logger.info("[恢复链路]   linkName:" + linkName + " 操作时间: " + new Date());
 		LinkService service = new LinkService();
+		service.recoveryLink(scenario_id, linkName);
+		return "恢复成功";
+	}
+
+	@RequestMapping("/connectL2Link")
+	@ResponseBody
+	public String recoveryL2Link(int scenario_id, String linkName) {
+		logger.info("[恢复L2链路]   linkName:" + linkName + " 操作时间: " + new Date());
+		L2LinkService service = new L2LinkService();
 		service.recoveryLink(scenario_id, linkName);
 		return "恢复成功";
 	}
@@ -439,18 +562,31 @@ public class ActionController {
 
 	@RequestMapping("/addInnerLink")
 	@ResponseBody
-	public String addInnerLink(Link link, String complexNodeName) {
+	public String addInnerLink(Link link, String complexNodeName, int onlyPort) throws Exception {
 		logger.info("[创建内部链路]   linkName:" + link.getLinkName() + " 操作时间: " + new Date());
 
 		ComplexNodeDao complexNodeDao = new ComplexNodeDaoImpl();
 		link.setCn_id(complexNodeDao.getComplexNodeBys_idAndComplexNodeName(link.getScenario_id(), complexNodeName)
 				.getCn_id());
 		LinkService linkService = new LinkService();
-		boolean flag = linkService.createLink(link);
+
+		boolean flag;
+		if (link.getLinkType() == 5 || link.getLinkType() == 6 || link.getLinkType() == 7) {
+			System.out.println("create l2 link");
+			flag = linkService.createL2Link(link, onlyPort);
+		} else {
+			System.out.println("create l3 link");
+			flag = linkService.createLink(link);
+		}
 		if (flag == true) {
 			return "创建成功";
 		}
 		return "创建失败！";
+		// boolean flag = linkService.createLink(link);
+		// if (flag == true) {
+		// return "创建成功";
+		// }
+		// return "创建失败！";
 	}
 
 	/*
@@ -547,7 +683,7 @@ public class ActionController {
 				// 一次遍历所有文件
 				MultipartFile file = multiRequest.getFile(iter.next().toString());
 				if (file != null) {
-					path = "E:/" + file.getOriginalFilename();
+					path = "/home/controller/" + file.getOriginalFilename();
 					// 上传
 					file.transferTo(new File(path));
 				}
@@ -591,8 +727,9 @@ public class ActionController {
 	public String submitRegulation(String linkJson, int s_id, String regulationOption)
 			throws IOException, InterruptedException {
 		// 将JSon字符串转换为集合
-//		List<LinkForFilter> linkForFilters = JSoneUtils.JSonToCollection(linkJson);
-		List<LinkForFilter> linkForFilters = JSoneUtils.JSonToCollection(linkJson,new LinkForFilter());
+		// List<LinkForFilter> linkForFilters =
+		// JSoneUtils.JSonToCollection(linkJson);
+		List<LinkForFilter> linkForFilters = JSoneUtils.JSonToCollection(linkJson, new LinkForFilter());
 
 		List<LinkForFilter> filterRegulation = new LinkedList<>();
 		// 拿到过滤掉的链路
@@ -621,20 +758,92 @@ public class ActionController {
 		return "返回成功";
 	}
 
-	
-	
 	@RequestMapping("/setBigNodeAttr")
-	public String setBigNodeAttr(String bigNodeConfigArray,int s_id) throws Exception {
+	public String setBigNodeAttr(String bigNodeConfigArray, int s_id) throws Exception {
 		STKScenario stkScenario = new STKScenario();
-//		System.out.println(bigNodeConfigArray);
-//		stkScenario.createSTKAllNode();
-		//一个一个遍历节点 把节点的属性设置完毕之后添加到list中
-//		System.out.println(bigNodeCofigArray.getNodes());
-//		List<Node> nodes = JSoneUtils.JSonToCollection(bigNodeConfigArray,new Node());
 		System.out.println(bigNodeConfigArray);
+		@SuppressWarnings("unchecked")
 		List<NodeCreater> nodeCreater = JSoneUtils.JSonToCollection(bigNodeConfigArray, new NodeCreater());
+		long beforecreatetime = new Date().getTime();
 		stkScenario.createSTKAllNode(nodeCreater, s_id);
+		System.out.println("创建节点花费：" + (new Date().getTime() - beforecreatetime) + "ms");
+		Thread.sleep(3000);
+		try {
+			stkScenario.createInitScenario(s_id);
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+		stkScenario.createConnection(s_id);
+		logger.info("初始拓扑建立完毕。\n 创建初始拓扑花费时间：" + (new Date().getTime() - beforecreatetime) / (1000 * 60) + "分");
 		return "返回成功";
 	}
 
+	/**
+	 * 开始仿真 1、从数据库里面拿出现在已经有的链路（状态为0的链路） 2、获取STK文件在分钟数为1时候的链路 3、看看stk在分数数为1时候的链路
+	 * 跟之前的链路哪些增加了 哪些删除了
+	 */
+	@RequestMapping("/startSimulation")
+	public void startSimulaiton(int s_id) throws IOException, InterruptedException {
+		Integer maxTime = STKAnalyse.getMaxSimulationTime(s_id);
+		int currentTime = 5;
+		HashMap<String, Set<LinkForInitialScenario>> map = STKAnalyse.getInitZeroToFourMinFromSTK(s_id);
+		STKUtil.start();
+		while (currentTime < maxTime) {
+			long beforeworkTime = new Date().getTime();
+			logger.info("第" + (currentTime - 1) + "----" + currentTime + "min仿真开始。");
+			// DynamicController.startSimulation(currentTime,s_id);
+			DynamicController dynamicController = new DynamicController(s_id, currentTime);
+			map = (HashMap<String, Set<LinkForInitialScenario>>) dynamicController.startSimulation(map);
+			// dynamicController.startSimulation();
+			// 剩余休眠时间
+			currentTime++;
+			Thread.sleep(1000 * 60 - (new Date().getTime() - beforeworkTime));
+			logger.info("第" + (currentTime - 1) + "----" + currentTime + "min仿真结束,开始休眠....");
+		}
+		logger.info("仿真结束");
+	}
+
+	@RequestMapping("/createL2Link")
+	public String createL2Link(Link link) {
+		LinkService linkService = new LinkService();
+		// linkService.createL2Link(link);
+		return null;
+	}
+
+	@RequestMapping("/getL2LinkList")
+	@ResponseBody
+	public String getL2LinkList(int s_id) {
+		// System.out.println("getL2LinkList");
+		L2LinkService l2linkservice = new L2LinkService();
+		// System.out.println(JSoneUtils.ListToJson(l2linkservice.getL2LinkListById(s_id)).toString());
+		System.out.println(l2linkservice.getL2LinkListById(s_id));
+		return JSoneUtils.ListToJson(l2linkservice.getL2LinkListById(s_id)).toString();
+
+	}
+
+	@RequestMapping("/updateNodeLocation")
+	public void updateNodeLocation(int s_id, String nodeName, int x, int y) {
+		NodeService nodeService = new NodeService();
+		nodeService.updateLocation(s_id, nodeName, x, y);
+	}
+
+	@RequestMapping("/getL2LinkListByNodeName")
+	@ResponseBody
+	public String getL2NodePortList(int s_id, String nodeName) {
+		L2LinkService l2linkservice = new L2LinkService();
+		return JSoneUtils.ListToJson(l2linkservice.getL2NodePortList(s_id, nodeName)).toString();
+	}
+
+//	@RequestMapping("/editEth")
+//	@ResponseBody
+//	public String editEth(String maximumRate, String packetLoss, String ethName, String nodeName) throws Exception {
+//		Port port = new Port();
+//		port.setMaximumRate(maximumRate);
+//		port.setPacketLoss(packetLoss);
+//		L2LinkService l2linkservice = new L2LinkService();
+//		String floatIP = NetworkUtils.getFloatIpByNodeName(nodeName);
+//		// set l2 tc
+//		l2linkservice.setTC(floatIP, ethName, port, "1111");
+//		return "TC success";
+//	}
 }

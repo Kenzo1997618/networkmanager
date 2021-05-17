@@ -446,7 +446,7 @@ function initMyModal(data) {
     }
     // console.log(bigNodeConfigArray);
     $("#bigNodeName").html(html);
-    $("#bigNodeName").val('');
+    $("#bigNodeName").val(''); // 初始化时不选择任何一项
     $("#myModal").modal();
 }
 
@@ -464,6 +464,18 @@ $("#bigNodeName").click(function () {
             $("#operatingSystem").val(bigNodeConfigArray[i].operatingSystem);
             $("#nodeConfig").val(bigNodeConfigArray[i].flavorType);
             $("#nodeImage").val(bigNodeConfigArray[i].imageName);
+            if ($("#bigNodeName").val().indexOf('GEO') >= 0) {
+                bigNodeConfigArray[i].iconUrl = "img/gaogui01.png";
+            }
+            if ($("#bigNodeName").val().indexOf('LEO') >= 0) {
+                bigNodeConfigArray[i].iconUrl = "img/zhonggui01.png";
+            }
+            if ($("#bigNodeName").val().indexOf('Facility') >= 0) {
+                bigNodeConfigArray[i].iconUrl = "img/leida01.png";
+            }
+            if ($("#bigNodeName").val().indexOf('GroundVehicle') >= 0) {
+                bigNodeConfigArray[i].iconUrl = "img/junjian01.png";
+            }
             // // 初始化复选框，先全部取消
             // $('input[name = "inlineCheckbox"]').each(function(){
             //     $(this).removeAttr("checked");
@@ -497,7 +509,7 @@ $("#bigNodeConfigOperation").change(function () {
             // for (var j = 0; j < id_array.length; j++) {
             //     bigNodeConfigArray[i].innerRules[j] = id_array[j];
             // }
-            bigNodeConfigArray[i].iconUrl = "img/gaogui01.png";
+            // bigNodeConfigArray[i].iconUrl = "img/gaogui01.png"; // 设置默认的图标
             console.log("当前类的数据是：" + bigNodeConfigArray[i]);
         }
     }
@@ -563,6 +575,30 @@ $("#addNode").click(function () {
         success: function (msg) {
             $.alert(msg);
             $("#myModal").modal('hide');
+            // 进度条100s后关掉页面
+            $(function() {
+                var progressbar = $( "#progressbar" ),
+                    progressLabel = $( ".progress-label" );
+                progressbar.progressbar({
+                    value: false,
+                    change: function() {
+                        progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+                    },
+                    complete: function() {
+                        window.parent.location.reload();
+                        window.close();
+                        progressLabel.text( "完成！" );
+                    }
+                });
+                function progress() {
+                    var val = progressbar.progressbar( "value" ) || 0;
+                    progressbar.progressbar( "value", val + 1 );
+                    if ( val < 99 ) {
+                        setTimeout( progress, 1000 );
+                    }
+                }
+                setTimeout( progress, 3000 );
+            });
         },
         error: function () {
 

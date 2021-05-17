@@ -8,8 +8,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
@@ -21,6 +19,11 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.Test;
+
+import cn.edu.uestc.platform.dao.NodeDao;
+import cn.edu.uestc.platform.dao.NodeDaoImpl;
+import cn.edu.uestc.platform.pojo.Node;
+import cn.edu.uestc.platform.utils.SSHExecutorUtils;
 
 public class APITest {
 	public static final String GET_URL = "http://112.4.27.9/mall-back/if_user/store_list?storeId=32";
@@ -159,7 +162,7 @@ public class APITest {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
+
 
 }

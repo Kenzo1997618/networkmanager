@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,19 +13,21 @@ import java.util.Set;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import cn.edu.uestc.platform.dao.ScenarioDao;
 import cn.edu.uestc.platform.dao.ScenarioDaoImpl;
 import cn.edu.uestc.platform.pojo.BigClassForFilter;
 import cn.edu.uestc.platform.pojo.LinkForFilter;
+import cn.edu.uestc.platform.pojo.LinkForInitialScenario;
 
 public class STKAnalyse {
+	private static Logger logger = Logger.getLogger(STKAnalyse.class);
 
 	// 拿到节点与节点之间的连接信息
 	public Set<LinkForFilter> getLinkForFilter(int s_id) throws IOException {
-
-		// 拿到此场景下的文件路径
+		// 拿到此场景下的文件路径(全部链路了包含重复的链路)
 		ScenarioDao scenarioDao = new ScenarioDaoImpl();
 		String path = scenarioDao.findDynamicTopologyFileBySid(s_id);
 		Reader in = new FileReader(path);
@@ -42,10 +45,58 @@ public class STKAnalyse {
 		}
 		return set;
 	}
-	
+
+	// 获取不同時間段的不重复的链路
+	public HashSet<LinkForInitialScenario> getLinkForInitialScenario(int s_id, String time) throws IOException {
+		ScenarioDao scenarioDao = new ScenarioDaoImpl();
+		String path = scenarioDao.findDynamicTopologyFileBySid(s_id);
+		Reader in = new FileReader(path);
+		Iterable<CSVRecord> records = CSVFormat.EXCEL.withFirstRecordAsHeader().parse(in);
+		HashSet<LinkForInitialScenario> set = new HashSet<LinkForInitialScenario>();
+		for (CSVRecord record : records) {
+			if (record.get("Time (EpMin)").equals(time)) {
+				LinkForInitialScenario link4fltr = new LinkForInitialScenario();
+				String fromNodeName = record.get("Strand Name").substring(record.get("Strand Name").indexOf("/") + 1,
+						record.get("Strand Name").indexOf(" "));
+				String toNodeName = record.get("Strand Name").substring(record.get("Strand Name").lastIndexOf("/") + 1,
+						record.get("Strand Name").length());
+				String range = record.get("Range (km)");
+				String gaptime = record.get("Time (EpMin)");
+				link4fltr.setFromNodeName(fromNodeName);
+				link4fltr.setToNodeName(toNodeName);
+				link4fltr.setRange(range);
+				link4fltr.setTime(gaptime);
+				set.add(link4fltr);
+			}
+		}
+		return set;
+	}
+
+	// 获取文件中不重复的所有链路
+	public Set<LinkForInitialScenario> getSingleLink(int s_id) throws IOException {
+		ScenarioDao scenarioDao = new ScenarioDaoImpl();
+		String path = scenarioDao.findDynamicTopologyFileBySid(s_id);
+		Reader in = new FileReader(path);
+		Iterable<CSVRecord> records = CSVFormat.EXCEL.withFirstRecordAsHeader().parse(in);
+		Set<LinkForInitialScenario> set = new HashSet<LinkForInitialScenario>();
+		for (CSVRecord record : records) {
+			LinkForInitialScenario link4fltr = new LinkForInitialScenario();
+			String fromNodeName = record.get("Strand Name").substring(record.get("Strand Name").indexOf("/") + 1,
+					record.get("Strand Name").indexOf(" "));
+			String toNodeName = record.get("Strand Name").substring(record.get("Strand Name").lastIndexOf("/") + 1,
+					record.get("Strand Name").length());
+			String range = record.get("Range (km)");
+			String gaptime = record.get("Time (EpMin)");
+			link4fltr.setFromNodeName(fromNodeName);
+			link4fltr.setToNodeName(toNodeName);
+			link4fltr.setRange(range);
+			link4fltr.setTime(gaptime);
+			set.add(link4fltr);
+		}
+		return set;
+	}
 
 
-	
 
 	// 返回大类之间信息 包括大类中含的节点 大类对应连接的大类等
 	public Set<BigClassForFilter> getBigNodeLink(int s_id) throws IOException {
@@ -95,7 +146,6 @@ public class STKAnalyse {
 				relation.add(tmp);
 			}
 		}
-		// System.out.println(relation);
 
 		// 给每个大类添加与之关联的大类
 		for (BigClassForFilter b : bigClassForFilters) {
@@ -136,8 +186,7 @@ public class STKAnalyse {
 	public String getBigClassName(int s_id) throws IOException {
 		ScenarioDao scenarioDao = new ScenarioDaoImpl();
 		String path = scenarioDao.findDynamicTopologyFileBySid(s_id);
-		Reader in = new FileReader(path.substring(0, path.indexOf("/") + 1) + "Changed"
-				+ path.substring(path.indexOf("/") + 1, path.length()));
+		Reader in = new FileReader(path.substring(0,path.lastIndexOf("/")+1)+"Changed"+path.substring(path.lastIndexOf("/")+1,path.length()));
 		Iterable<CSVRecord> records = CSVFormat.EXCEL.withFirstRecordAsHeader().parse(in);
 		String str = "";
 		for (CSVRecord record : records) {
@@ -227,10 +276,35 @@ public class STKAnalyse {
 		}
 		return typeNum;
 	}
-	
-	@Test
-	public void demo2() throws Exception{
-		System.out.println(analyseNodeTypeAndNodeNumber(37));
+
+	public static HashMap<String, Set<LinkForInitialScenario>> getInitZeroToFourMinFromSTK(int s_id)
+			throws IOException {
+		HashMap<String, Set<LinkForInitialScenario>> map = new HashMap();
+		STKAnalyse stkAnalyse = new STKAnalyse();
+		map.put("0", stkAnalyse.getLinkForInitialScenario(s_id, "0"));
+		map.put("1", stkAnalyse.getLinkForInitialScenario(s_id, "1"));
+		map.put("2", stkAnalyse.getLinkForInitialScenario(s_id, "2"));
+		map.put("3", stkAnalyse.getLinkForInitialScenario(s_id, "3"));
+		map.put("4", stkAnalyse.getLinkForInitialScenario(s_id, "4"));
+		logger.info("成功从STK中拿到0-4分钟的初始演化链路");
+		return map;
 	}
 
+
+	// 返回仿真文件中 最大时间数
+	public static int getMaxSimulationTime(int s_id) throws IOException {
+		// 拿到此场景下的文件路径(全部链路了包含重复的链路)
+		ScenarioDao scenarioDao = new ScenarioDaoImpl();
+		String path = scenarioDao.findDynamicTopologyFileBySid(s_id);
+		Reader in = new FileReader(path);
+		Iterable<CSVRecord> records = CSVFormat.EXCEL.withFirstRecordAsHeader().parse(in);
+		Integer maxTime = 0;
+		for (CSVRecord record : records) {
+			Integer time = Integer.parseInt(record.get("Time (EpMin)"));
+			if (maxTime < time) {
+				maxTime = time;
+			}
+		}
+		return maxTime;
+	}
 }
